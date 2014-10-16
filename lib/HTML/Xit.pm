@@ -131,6 +131,13 @@ $new_X = sub {
     return bless($X, __PACKAGE__);
 };
 
+# empty_x
+#
+# because methods are chained we need an HTML::Xit object to return
+# even if a previous selection in the chain failed.
+my $empty_x = sub { };
+bless($empty_x, __PACKAGE__);
+
 # each
 #
 # call callback function for each argument
@@ -302,6 +309,39 @@ sub attr
     return $X;
 }
 
+# children
+#
+# return child nodes.  *does not* process optional selector
+# at this time.
+sub children
+{
+    my($X) = @_;
+    my $self = $X->($X);
+
+    my $xml = $self->{_xml} or return $X;
+
+    # if we are working on a list of elements then return
+    # the children of all of the elements
+    if (reftype $xml eq 'ARRAY') {
+        my @child_nodes;
+        # add child nodes of each element to list
+        push(@child_nodes, $_->childNodes) for grep {
+            $_->can('childNodes')
+        } @$xml;
+        # return empty HTML::Xit unless child nodes were found
+        return $empty_x unless @child_nodes;
+        # return new HTML::Xit with child nodes
+        return $new_X->( {_xml => \@child_nodes} );
+    }
+    else {
+        # get child nodes or return empty HTML::Xit object
+        return $empty_x unless $xml->can('childNodes')
+            and (my @child_nodes = $xml->childNodes);
+        # create new HTML::Xit object from child nodes
+        return $new_X->( {_xml => \@child_nodes} );
+    }
+}
+
 # each
 #
 # call callback function for each argument
@@ -410,7 +450,7 @@ sub html
         my $sel = $first->($xml);
         # if the current node has children then create html
         # by concatenating html values of child nodes
-        if ( my @child_nodes = eval {$sel->childNodes} ) {
+        if ( $sel->can('childNodes') && (my @child_nodes = $sel->childNodes) ) {
             return join('', map {
                 $_->can('toStringHTML')
                     ? $_->toStringHTML
@@ -607,6 +647,8 @@ DOM manipulation in the style of jQuery using L<XML::LibXML> and L<HTML::Selecto
 =item append
 
 =item attr
+
+=item children
 
 =item each
 
