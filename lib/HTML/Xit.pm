@@ -66,7 +66,7 @@ my $new_guess_args = sub {
         }
     }
     # url or valid file path
-    elsif ($arg =~ m{^http} || -e $arg) {
+    elsif ( $arg =~ m{^http} || ($arg !~ m{\n} && -e $arg) ) {
         return $new_explicit_args->(location => $arg);
     }
     # text
@@ -372,12 +372,18 @@ sub html
     my($X) = shift;
     my $self = $X->($X);
 
-    my $xml = $self->{_xml} or return $X;
-
+    my $xml = $self->{_xml};
+    # if there are args we modify the current elements
+    # and return the current HTML::Xit instance
     if (@_) {
+        # require current element
+        return $X unless $xml;
+        # build nodes to be appended from args which can
+        # be either HTML strings or HTML::Xit objects
         my $child_nodes = $arg_to_nodes->(@_)
             or return $X;
-
+        # go through each of the current elements and set
+        # the child nodes from args to be their HTML content
         $each->($xml, sub {
             my $sel = shift or return;
             # must be able to have children
@@ -392,18 +398,35 @@ sub html
                 $sel->appendChild( $node->cloneNode(1) );
             });
         });
+        # return HTML::Xit instance
+        return $X;
     }
+    # if there are no args then we return the HTML text of the
+    # current elements or an empty string
     else {
+        # require current element
+        return '' unless $xml;
+        # get the first element
         my $sel = $first->($xml);
-
-        return $sel->toStringHTML
-            if $sel->can('toStringHTML');
-        return $sel->toString
-            if $sel->can('toString');
-        return;
+        # if the current node has children then create html
+        # by concatenating html values of child nodes
+        if ( my @child_nodes = eval {$sel->childNodes} ) {
+            return join('', map {
+                $_->can('toStringHTML')
+                    ? $_->toStringHTML
+                    : $_->can('toString')
+                        ? $_->toString
+                        : ''
+            } @child_nodes);
+        }
+        # if the node has no children then it can only have
+        # text content (?) maybe not possible
+        else {
+            return $sel->can('toString')
+                ? $sel->toString
+                : '';
+        }
     }
-
-    return $X;
 }
 
 # text
@@ -419,11 +442,9 @@ sub text
     if (defined $value) {
         $each->($xml, sub {
             my $sel = shift or return;
-
             # text replaces everything else so remove child nodes
             # if they exist
             $sel->removeChildNodes() if $sel->can('removeChildNodes');
-
             # attempt different methods of adding text
             # XML::LibXML::Element
             if ($sel->can('appendText')) {
