@@ -13,7 +13,7 @@ use Scalar::Util qw(
 );
 use XML::LibXML;
 
-
+our $VERSION = '0.01';
 
 # default arguments for XML::LibXML
 my $default_libxml_args = {
@@ -318,11 +318,11 @@ sub each
     if (ref $xml && reftype $xml eq 'ARRAY') {
         # call callback for each element in array, creating a
         # new HTML::Xit instance for each XML element
-        $func->( $new_X->({_xml => $node}) ) for @$xml;
+        $func->( $new_X->({_xml => $_}) ) for @$xml;
     }
     else {
         # call callback, creating a new HTML::Xit instance
-        $func->( $new_X->({_xml => $node}) );
+        $func->( $new_X->({_xml => $xml}) );
     }
 
     return $X;
@@ -360,7 +360,7 @@ sub get
     # return either all nodes or specified index
     return defined $index && int $index
         ? $nodes->[ $index ]
-        : $nodex;
+        : $nodes;
 }
 
 # html
