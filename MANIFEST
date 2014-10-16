@@ -1,9 +1,21 @@
 Changes
+ignore.txt
+lib/HTML/.Xit.pm.swp
 lib/HTML/Xit.pm
 Makefile.PL
 MANIFEST			This list of files
 README
+t/.prepend.t.swp
 t/00-load.t
+t/01-new.t
+t/02-selectors.t
+t/append.t
+t/attr.t
+t/data/.test.html.swp
+t/data/test.html
+t/html.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
+t/prepend.t
+t/text.t
