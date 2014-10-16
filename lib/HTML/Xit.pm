@@ -429,6 +429,20 @@ sub html
     }
 }
 
+# last
+#
+# return the last matching element
+sub last {
+    my($X) = @_;
+    my $self = $X->($X);
+
+    my $xml = $self->{_xml} or return $X;
+
+    return ref $xml && reftype $xml eq 'ARRAY'
+        ? $new_X->( {_xml => $xml->[-1]} )
+        : $new_X->( {_xml => $xml} );
+};
+
 # text
 #
 # return text content
@@ -494,6 +508,8 @@ sub append
             $sel->appendChild( $node->cloneNode(1) );
         });
     });
+
+    return $X;
 }
 
 # prepend
@@ -543,6 +559,8 @@ sub prepend
             return;
         }
     });
+
+    return $X;
 }
 
 # add/remove/toggle class using $mod_class
@@ -580,27 +598,33 @@ DOM manipulation in the style of jQuery using L<XML::LibXML> and L<HTML::Selecto
 
 =head1 METHODS
 
-They all work sort of like jQuery ...
-
 =over 4
 
-=item each
-
-=item attr
-
-=item html
-
-=item text
+=item new
 
 =item addClass
 
-=item removeClass
-
-=item toggleClass
-
 =item append
 
+=item attr
+
+=item each
+
+=item first
+
+=item get
+
+=item html
+
+=item last
+
 =item prepend
+
+=item removeClass
+
+=item text
+
+=item toggleClass
 
 =back
 
