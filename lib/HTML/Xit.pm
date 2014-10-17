@@ -677,14 +677,13 @@ HTML::Xit - XML/HTML DOM Manipulation with CSS Selectors
 
 =head1 SYNOPSIS
 
-my $X = new HTML::Xit("http://mysite.com/mydoc.html");
+my $X = HTML::Xit->new("http://mysite.com/mydoc.html");
 
 $X->("a")->each( sub {
     my($X) = @_;
 
     print $X->attr("href");
     print $X->text;
-    print $X->html;
 } );
 
 $X->(".a")->addClass("b c d")->removeClass("c e")->toggleClass("b a");
