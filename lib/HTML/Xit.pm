@@ -375,6 +375,39 @@ sub children
     }
 }
 
+# classes
+#
+# return a list of the classes assigned to elements
+sub classes
+{
+    my($X) = @_;
+    my $self = $X->($X);
+
+    my $xml  = $self->{_xml} or return;
+
+    my $classes;
+
+    # for multiple elements add each element's class attribute
+    # to the list of classes
+    if (reftype $xml eq 'ARRAY') {
+        $classes .= " " . $_->getAttribute('class') for @$xml;
+    }
+    # get class attribute for single element
+    else {
+        $classes = $xml->getAttribute('class');
+    }
+    # build table of unique class names
+    $classes = {
+        map {$_ => 1} grep {defined $_ && $_ =~ /\w+/} split(/\s+/, $classes)
+    };
+
+    return wantarray
+        # return sorted list of classes
+        ? sort keys %$classes
+        # return hashref of classes
+        : $classes;
+}
+
 # each
 #
 # call callback function for each argument
@@ -434,6 +467,22 @@ sub get
     return defined $index && int $index
         ? $nodes->[ $index ]
         : $nodes;
+}
+
+# hasClass
+#
+# return true (1) / false (0) if any of the elements have
+# the class.  return undef on errors.
+sub hasClass
+{
+    my($X, $class) = @_;
+    # require class name to test
+    return unless defined $class;
+    # get hashref of class names
+    my $classes = $X->classes()
+        or return;
+
+    return $classes->{$class} ? 1 : 0;
 }
 
 # html
@@ -660,11 +709,15 @@ DOM manipulation in the style of jQuery using L<XML::LibXML> and L<HTML::Selecto
 
 =item children
 
+=item classes
+
 =item each
 
 =item first
 
 =item get
+
+=item hasClass
 
 =item html
 
@@ -687,6 +740,7 @@ L<XML::LibXML>, L<HTML::Selector::XPath>
 =head1 AUTHOR
 
 Ersun Warncke, C<< <ersun.warncke at outlook.com> >>
+
 http://ersun.warnckes.com
 
 =head1 COPYRIGHT
