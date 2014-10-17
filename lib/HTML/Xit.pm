@@ -279,6 +279,39 @@ sub new
     return $new_X->($self);
 }
 
+# addClass
+#
+# add class using $mod_class
+sub addClass    { $mod_class->('add', @_) }
+
+# append
+#
+# add nodes after last child
+sub append
+{
+    my($X) = shift;
+    my $self = $X->($X);
+
+    my $xml = $self->{_xml} or return $X;
+
+    my $child_nodes = $arg_to_nodes->(@_)
+        or return $X;
+
+    $each->($xml, sub {
+        my $sel = shift or return;
+        # must be able to have children
+        return unless $sel->can('appendChild');
+        # append one or more child nodes
+        $each->($child_nodes, sub {
+            my $node = shift or return;
+            # deep clone child
+            $sel->appendChild( $node->cloneNode(1) );
+        });
+    });
+
+    return $X;
+}
+
 # attr
 #
 # get or set an attribute on selected XML nodes
@@ -483,75 +516,6 @@ sub last {
         : $new_X->( {_xml => $xml} );
 };
 
-# text
-#
-# return text content
-sub text
-{
-    my($X, $value) = @_;
-    my $self = $X->($X);
-
-    my $xml = $self->{_xml} or return $X;
-
-    if (defined $value) {
-        $each->($xml, sub {
-            my $sel = shift or return;
-            # text replaces everything else so remove child nodes
-            # if they exist
-            $sel->removeChildNodes() if $sel->can('removeChildNodes');
-            # attempt different methods of adding text
-            # XML::LibXML::Element
-            if ($sel->can('appendText')) {
-                $sel->appendText($value);
-            }
-            # XML::LibXML::Text
-            elsif ($sel->can('setData')) {
-                $sel->setData($value);
-            }
-            # XML::LibXML::Node
-            elsif ($sel->can('appendChild')) {
-                $sel->appendChild( $sel->createTextNode($value) );
-            }
-        });
-    }
-    else {
-        my $sel = $first->($xml);
-        return $sel && $sel->can('textContent')
-            ? $sel->textContent
-            : undef;
-    }
-
-    return $X;
-}
-
-# append
-#
-# add nodes after last child
-sub append
-{
-    my($X) = shift;
-    my $self = $X->($X);
-
-    my $xml = $self->{_xml} or return $X;
-
-    my $child_nodes = $arg_to_nodes->(@_)
-        or return $X;
-
-    $each->($xml, sub {
-        my $sel = shift or return;
-        # must be able to have children
-        return unless $sel->can('appendChild');
-        # append one or more child nodes
-        $each->($child_nodes, sub {
-            my $node = shift or return;
-            # deep clone child
-            $sel->appendChild( $node->cloneNode(1) );
-        });
-    });
-
-    return $X;
-}
-
 # prepend
 #
 # add nodes before first child
@@ -603,9 +567,55 @@ sub prepend
     return $X;
 }
 
-# add/remove/toggle class using $mod_class
-sub addClass    { $mod_class->('add', @_) }
+# removeClass
+#
+# remove class using $mod_class
 sub removeClass { $mod_class->('remove', @_) }
+
+# text
+#
+# return text content
+sub text
+{
+    my($X, $value) = @_;
+    my $self = $X->($X);
+
+    my $xml = $self->{_xml} or return $X;
+
+    if (defined $value) {
+        $each->($xml, sub {
+            my $sel = shift or return;
+            # text replaces everything else so remove child nodes
+            # if they exist
+            $sel->removeChildNodes() if $sel->can('removeChildNodes');
+            # attempt different methods of adding text
+            # XML::LibXML::Element
+            if ($sel->can('appendText')) {
+                $sel->appendText($value);
+            }
+            # XML::LibXML::Text
+            elsif ($sel->can('setData')) {
+                $sel->setData($value);
+            }
+            # XML::LibXML::Node
+            elsif ($sel->can('appendChild')) {
+                $sel->appendChild( $sel->createTextNode($value) );
+            }
+        });
+    }
+    else {
+        my $sel = $first->($xml);
+        return $sel && $sel->can('textContent')
+            ? $sel->textContent
+            : undef;
+    }
+
+    return $X;
+}
+
+# toggleClass
+#
+# toggle class using $mod_class
 sub toggleClass { $mod_class->('toggle', @_) }
 
 1;
