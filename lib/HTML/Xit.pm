@@ -13,7 +13,7 @@ use Scalar::Util qw(
 );
 use XML::LibXML;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 # default arguments for XML::LibXML
 my $default_libxml_args = {
@@ -319,27 +319,31 @@ sub attr
 {
     my($X, $name, $value) = @_;
     my $self = $X->($X);
-    my $xml  = $self->{_xml} or return $X;
+    my $xml  = $self->{_xml};
 
     if (defined $value)
     {
+        return $X unless $xml;
+
         $each->($xml, sub {
             my $sel = shift or return;
 
             $sel->setAttribute($name, $value)
                 if $sel->can('setAttribute');
         });
+
+        return $X;
     }
     else
     {
+        return undef unless $xml;
+
         my $sel = $first->($xml);
 
-        return $sel->getAttribute($name)
-            if $sel->can('getAttribute');
-        return;
+        return $sel->can('getAttribute')
+            ? $sel->getAttribute($name)
+            : undef;
     }
-
-    return $X;
 }
 
 # children
@@ -548,7 +552,7 @@ sub html
     # current elements or an empty string
     else {
         # require current element
-        return '' unless $xml;
+        return undef unless $xml;
         # get the first element
         my $sel = $first->($xml);
         # if the current node has children then create html
@@ -650,9 +654,11 @@ sub text
     my($X, $value) = @_;
     my $self = $X->($X);
 
-    my $xml = $self->{_xml} or return $X;
+    my $xml = $self->{_xml};
 
     if (defined $value) {
+        return $X unless $xml;
+
         $each->($xml, sub {
             my $sel = shift or return;
             # text replaces everything else so remove child nodes
@@ -674,6 +680,8 @@ sub text
         });
     }
     else {
+        return undef unless $xml;
+
         my $sel = $first->($xml);
         return $sel && $sel->can('textContent')
             ? $sel->textContent

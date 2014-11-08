@@ -1,5 +1,9 @@
 Revision history for HTML-Xit
 
+0.04    2014-11-08
+    * fix bug with attr, text, and html methods returning wrong
+      values when there are no elements selected
+
 0.03    2014-11-08
     * add find method
     * add trimText method
