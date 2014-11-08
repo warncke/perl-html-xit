@@ -13,7 +13,7 @@ use Scalar::Util qw(
 );
 use XML::LibXML;
 
-our $VERSION = '0.01';
+our $VERSION = '0.03';
 
 # default arguments for XML::LibXML
 my $default_libxml_args = {
@@ -27,6 +27,13 @@ my $default_libxml_args = {
 # PRIVATE METHODS #
 #                 #
 ###################
+
+# empty_x
+#
+# because methods are chained we need an HTML::Xit object to return
+# even if a previous selection in the chain failed.
+my $empty_x = sub { };
+bless($empty_x, __PACKAGE__);
 
 # new_explicit_args
 #
@@ -84,7 +91,7 @@ my $new_X;
 $new_X = sub {
     my($self) = @_;
     # self must be a hash ref that includes a XML::LibXML object
-    return unless eval { $self->{_xml} };
+    return $empty_x unless eval { $self->{_xml} };
 
     my $X;
     # HTML::Xit instance
@@ -130,13 +137,6 @@ $new_X = sub {
 
     return bless($X, __PACKAGE__);
 };
-
-# empty_x
-#
-# because methods are chained we need an HTML::Xit object to return
-# even if a previous selection in the chain failed.
-my $empty_x = sub { };
-bless($empty_x, __PACKAGE__);
 
 # each
 #
@@ -434,6 +434,27 @@ sub each
     return $X;
 }
 
+# find
+#
+# get all matching child elements
+sub find
+{
+    my($X, $query) = @_;
+
+    my $nodes = [];
+
+    $X->each(sub {
+        my($X) = @_;
+        my $node = $X->($query)->get
+            or return;
+        $node = [$node]
+            unless reftype $node eq 'ARRAY';
+        push(@$nodes, @$node);
+    });
+
+    return $new_X->({_xml => $nodes})
+}
+
 # first
 #
 # return the first element from array or return arg if not an array.
@@ -662,6 +683,19 @@ sub text
     return $X;
 }
 
+# trimText
+sub trimText
+{
+    my($X) = @_;
+
+    my $text = $X->text;
+    return unless defined $text;
+
+    $text =~ s{^\s*|\s*$}{}g;
+
+    return $text;
+}
+
 # toggleClass
 #
 # toggle class using $mod_class
@@ -700,35 +734,150 @@ DOM manipulation in the style of jQuery using L<XML::LibXML> and L<HTML::Selecto
 
 =item new
 
+Create a new HTML::Xit instance.  The source can be a URL (which will be fetched), a filename,
+a file handle, or a string.
+
+    HTML::Xit->new("http://www.some.com");
+    HTML::Xit->new("somefile.html");
+    HTML::Xit->new($html);
+
+The source will be parsed using L<XML::LibXML>.  By default the following args are used:
+
+    recover  => 1,
+    suppress_errors => 1,
+    suppress_warnings => 1,
+
+You can pass arguments for use when instantiating L<XML::LibXML>.
+
+    HTML::Xit->new({
+        recover => 0,
+        location => "http://www.some.com",
+    });
+
+These arguments will be passed to XML::LibXML->load_html which is documented in L<XML::LibXML::Parser>.
+
 =item addClass
+
+    $X->addClass("a b");
+
+Add one or more classes to the matching elements.  Class names must be space separated.
 
 =item append
 
+    $X->append("<span>Hello</span>");
+    $X->append( $X->("<span>")->text("Hello") );
+
+Insert the content passed after the last child node for each matching element.
+
 =item attr
+
+    $X->attr("href");
+    $X->attr("href", "http://www.some.com");
+
+Either get or set an attribute.
 
 =item children
 
+    $X->children();
+
+Get child nodes for each matching element.
+
 =item classes
+
+    my $hash_ref = $X->classes();
+    $hash_ref->{someClass} ? 1 : 0;
+
+Get hashref containing the names of all of the classes for the matching element.
+
+!! NOT STANDARD JQUERY !!
 
 =item each
 
+    $X->each(sub {
+        my($X) = @_;
+    });
+
+Interate over each matching element, calling the callback function for each.
+
+=item find
+
+    $X->(".foo")->find(".bar");
+
+Search matching elements for additional elements that match the given selector.
+
 =item first
+
+    my $h1 = $X->("h1")->first;
+
+Get the first matching element.
 
 =item get
 
+    my $nodes = $X->("p")->get
+
+Get the list of XML nodes that are currently selected.
+
 =item hasClass
+
+    $X->addClass("a");
+    $X->hasClass("a"); # true
+
+Will return true if the selected element has the given class.  If multiple elements
+are selected this will return true if any of the selected elements has the class.
 
 =item html
 
+    $X->html("<span>Hello</span>");
+    $X->append( $X->("<span>")->text("Hello") );
+    $X->html(); # "<span>Hello</span>"
+
+If an HTML string or HTML objects are passed this will set the inner HTML for each selected
+element.
+
+If no HTML is passed this will return the inner HTML of the first selected element as a string.
+
 =item last
+
+    $X->("a")->last();
+
+Return the last selected element.
 
 =item prepend
 
+    $X->prepend("<span>Hello</span>");
+    $X->prepend( $X->("<span>")->text("Hello") );
+
+Insert the content passed before the first child node for each matching element.
+
 =item removeClass
+
+    $X->removeClass("a b");
+
+Remove one or more classes from the matching elements.  Class names must be space separated.
 
 =item text
 
+    $X->text("Hello");
+    $X->text(); # Hello
+
+If a string is passed this will be set as the text content for all selected elements.
+
+If no text is passed then the text content of the first selected element will be returned.
+
+=item trimText
+
+    $X->trimText();
+
+Return $X->text() with leading and trailing whitespace removed.
+
+!! NOT STANDARD JQUERY !!
+
 =item toggleClass
+
+    $X->toggleClass("a b");
+
+Toggle one or more classes from the matching elements.  If the class exists it will be removed.
+If the class does not exist it will be added.  Class names must be space separated.
 
 =back
 
