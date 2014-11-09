@@ -18,8 +18,10 @@ WriteMakefile(
         'Test::More' => 0,
     },
     PREREQ_PM => {
-        #'ABC'              => 1.6,
-        #'Foo::Bar::Module' => 5.0401,
+        'Data::Dumper'          => 0,
+        'HTML::Selector::XPath' => 0,
+        'Scalar::Util'          => 0,
+        'XML::LibXML'           => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'HTML-Xit-*' },

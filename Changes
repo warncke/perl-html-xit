@@ -1,5 +1,8 @@
 Revision history for HTML-Xit
 
+0.05    2014-11-08
+    * fix memory leak when creating new HTML::Xit objects
+
 0.04    2014-11-08
     * fix bug with attr, text, and html methods returning wrong
       values when there are no elements selected

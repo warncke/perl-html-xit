@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use Devel::Refcount qw(refcount);
 use HTML::Selector::XPath qw(
     selector_to_xpath
 );
@@ -15,7 +14,7 @@ use Scalar::Util qw(
 );
 use XML::LibXML;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 # default arguments for XML::LibXML
 my $default_libxml_args = {
@@ -730,18 +729,18 @@ HTML::Xit - XML/HTML DOM Manipulation with CSS Selectors
 
 =head1 SYNOPSIS
 
-my $X = HTML::Xit->new("http://mysite.com/mydoc.html");
+    my $X = HTML::Xit->new("http://mysite.com/mydoc.html");
 
-$X->("a")->each( sub {
-    my($X) = @_;
+    $X->("a")->each( sub {
+        my($X) = @_;
 
-    print $X->attr("href");
-    print $X->text;
-} );
+        print $X->attr("href");
+        print $X->text;
+    } );
 
-$X->(".a")->addClass("b c d")->removeClass("c e")->toggleClass("b a");
+    $X->(".a")->addClass("b c d")->removeClass("c e")->toggleClass("b a");
 
-print $X->("<a>")->attr("href", "http://mysite.com")->text("My Site")->html;
+    print $X->("<a>")->attr("href", "http://mysite.com")->text("My Site")->html;
 
 =head1 DESCRIPTION
 
