@@ -4,12 +4,14 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use Devel::Refcount qw(refcount);
 use HTML::Selector::XPath qw(
     selector_to_xpath
 );
 use Scalar::Util qw(
     blessed
     reftype
+    weaken
 );
 use XML::LibXML;
 
@@ -93,15 +95,20 @@ $new_X = sub {
     # self must be a hash ref that includes a XML::LibXML object
     return $empty_x unless eval { $self->{_xml} };
 
-    my $X;
+    # need to jump through some hoops here to avoid creating
+    # a circular ref.  We can't have $X getting captured in its
+    # own closure, but we need to know the scalar value of $X, so
+    # create $Y, then assign the scalar value of $X to $Y after creating
+    # $X
+    my $Y;
     # HTML::Xit instance
-    $X = sub {
+    my $X = sub {
         my($select) = @_;
         # if we are passed a self-reference then
         # return our hidden instance variable
         return $self
             if ref $select
-            and $select eq $X;
+            and $select eq $Y;
 
         my $xml = $self->{_xml};
         # else create a new instance
@@ -127,7 +134,7 @@ $new_X = sub {
         else {
             # generate xpath from CSS selector using HTML::Selector::XPath
             my $xpath = selector_to_xpath($select)
-                or return $X;
+                or return $empty_x;
             # set the current xml context as the result of the xpath selection
             $self->{_xml} = $xml->find('.'.$xpath);
         }
@@ -135,7 +142,11 @@ $new_X = sub {
         return $new_X->($self);
     };
 
-    return bless($X, __PACKAGE__);
+    bless($X, __PACKAGE__);
+    # store scalar value of $X without creating another ref
+    $Y = "$X";
+    # return blessed sub ref
+    return $X;
 };
 
 # each
